@@ -1,7 +1,15 @@
-let selectedObject = null;
+let selectedObject = null; // for pointer hover
 let raycaster, pointer;
 let objectWorldPos = new THREE.Vector3();
+let clickedObject = null; // for clicked object
+let lookTarget = new THREE.Vector3(); // angle the camera looks at after zooming in 
+const lookDummy = new THREE.PerspectiveCamera(); // used only to compute the end rotation
+let camTimeline = null;
 
+const dict = {
+    'poster': 'poster-popup',
+    'monitor': 'monitor-popup'
+}
 
 /* https://github.com/mrdoob/three.js/blob/master/examples/webgl_geometry_terrain_raycast.html*/
 function onPointerMove(event) {
@@ -21,65 +29,162 @@ function onPointerMove(event) {
         selectedObject = intersects[0].object;
     } else {
         console.log('Pointer is not over the model');
-        // selectedObject = null;
+        selectedObject = null;
     }
 }
 window.addEventListener('pointermove', onPointerMove, false)
 
-
-
-async function zoomIn () {
-
-    if (selectedObject.name == 'poster' || selectedObject.name == 'monitor') {
-    selectedObject.getWorldPosition(objectWorldPos);
-
-    gsap.to(camera.position, {
-        x: objectWorldPos.x, y: objectWorldPos.y, z: objectWorldPos.z + 1,
-        duration: 2,
-        ease: 'power2.inOut',
-        onUpdate: () => {
+function onPointerClick(event) {
+    if (selectedObject) { // object can't be null
+        if (selectedObject.name in dict) {
+            clickedObject = selectedObject;
+            clickedObject.getWorldPosition(objectWorldPos);
+            lookTarget = objectWorldPos;
+            console.log('first', lookTarget);
+            switch (clickedObject.name) {
+                case 'poster':
+                    lookTarget.set(lookTarget.x+1, lookTarget.y+0.1, lookTarget.z - 1);
+                    console.log("second", lookTarget);
+                   // zoomIn(objectWorldPos.x+0.9, objectWorldPos.y, objectWorldPos.z + 1);
+                    let postercam = new THREE.Vector3(objectWorldPos.x-0.3, objectWorldPos.y, objectWorldPos.z + 1);
+                    zoomIn(postercam, lookTarget);
+                    console.log('poster camera at: ', camera.position);
+                    break;
+            }
+            // zoomIn();
+            console.log('clicked object:', selectedObject.name);
         }
-    });
-
-    nn.get('.popup').css('display', 'block')
-    await nn.sleep(10)
-    nn.get('.popup').css('opacity', 1)
-    } else {
-        nn.get('.popup').css('display', 'none');
     }
 }
+window.addEventListener('click', onPointerClick, false);
 
+// zooms in where x, y, z are the camera position, then angles correctly 
+function zoomIn(cameraPos, lookatPos) {
+
+    gsap.to(camera.position, {
+        x: cameraPos.x, y: cameraPos.y, z: cameraPos.z,
+        duration: 2, 
+        ease: 'power2.inOut',
+        onComplete: () => {
+            camera.lookAt(lookTarget);
+        }
+    });
+    // TODO: figure out lookAt animation
+    // gsap.to(look, {
+    //     x: lookTarget.x, y: lookTarget.y, z: lookTarget.z,
+    //     duration: 1,
+    //     ease: 'power2.inOut'
+    // });
+    // handlePopup(clickedObject.name);
+}
+    
+
+
+// async function zoomIn () {
+
+//     if (selectedObject.name == 'poster' || selectedObject.name == 'monitor') {
+//     selectedObject.getWorldPosition(objectWorldPos);
+
+//     gsap.to(camera.position, {
+//         x: objectWorldPos.x, y: objectWorldPos.y, z: objectWorldPos.z + 1,
+//         duration: 2,
+//         ease: 'power2.inOut',
+//         onUpdate: () => {
+//         }
+//     });
+
+//     nn.get('.popup').css('display', 'block')
+//     await nn.sleep(10)
+//     nn.get('.popup').css('opacity', 1)
+//     } else {
+//         nn.get('.popup').css('display', 'none');
+//     }
+// }
+
+// used claude to help with the math, wanted a function that would move the camera then angle it during the later half of the animation
+function moveCamera(pos, lookAt, duration = 2, turnFraction = 0.5) {
+    if (camTimeline) camTimeline.kill();
+
+    const startQuat = camera.quaternion.clone();
+    lookDummy.position.copy(pos);
+    lookDummy.lookAt(lookAt);
+    const endQuat = lookDummy.quaternion.clone();
+
+    const turn = { t: 0 };
+    const turnDuration = duration * turnFraction;
+    camTimeline = gsap.timeline();
+
+    // Position: full duration
+    camTimeline.to(camera.position, {
+        x: pos.x, y: pos.y, z: pos.z,
+        duration,
+        ease: 'power2.inOut'
+    }, 0);
+
+    // Rotation: last `turnFraction` of the move
+    camTimeline.to(turn, {
+        t: 1,
+        duration: turnDuration,
+        ease: 'power2.inOut',
+        onUpdate: () => {
+            camera.quaternion.copy(startQuat).slerp(endQuat, turn.t);
+        }
+    }, duration - turnDuration);
+
+    return camTimeline;
+}
+
+// always zooms out to default position
 async function zoomOut() {
-
-    const target = new THREE.Vector3(defaultTarget.x, defaultTarget.y, defaultTarget.z);
-
     gsap.to(camera.position, {
      x: defaultCameraPos.x, y: defaultCameraPos.y, z: defaultCameraPos.z,
       duration: 2,
       ease: 'power2.inOut',
       onUpdate: () => {
-        camera.lookAt(target)
+        camera.lookAt(defaultTarget.x, defaultTarget.y, defaultTarget.z);
       }
     })
-    
     nn.get('.popup').css('display', 'block')
     await nn.sleep(10)
     nn.get('.popup').css('opacity', 0)
+    // alert('thie function ran');
   }
 
+// function zoomIn(x, y, z) {
+//     // Work out the final orientation using a throwaway camera
+//     const end = camera.clone();
+//     end.position.set(x, y, z + 1);
+//     end.lookAt(lookTarget);
+//     console.log("in zoom: ", lookTarget);
 
-function onPointerClick(event) {
-    // switch (selectedObject) {
-    //     case 'poster':
-    //         break;
-    // }
-    zoomIn();
-}
-window.addEventListener('click', onPointerClick, false);
+//     const start = camera.quaternion.clone();
+//     const progress = { t: 0 };
 
-function onKeyPress(event) {
+//     gsap.timeline({ defaults: { duration: 2, ease: 'power2.inOut', overwrite: 'auto' } })
+//         .to(camera.position, { x, y, z: z + 1 }, 0)
+//         .to(progress, {
+//             t: 1,
+//             onUpdate: () => camera.quaternion.slerpQuaternions(start, end.quaternion, progress.t),
+//         }, 0);
+// }
+
+
+
+
+function goBack(event) {
     if (event.key === 'Escape') {
         zoomOut();
     }
 }
-window.addEventListener('keydown', onKeyPress, false);
+window.addEventListener('keydown', goBack, false);
+
+async function handlePopup(objectName) {
+    if (objectName in dict) {
+        nn.get(dict[objectName]).css('display', 'block');
+        await nn.sleep(10);
+        nn.get(dict[objectName]).css('opacity', 1);
+        console.log("popup handled: ", objectName);
+    } else {
+        console.log("popup not handled for ", objectName);
+    }   
+}

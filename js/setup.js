@@ -1,8 +1,10 @@
 let renderer, scene, camera, gltf;
 let width = window.innerWidth;
 let height = window.innerHeight;
-let defaultCameraPos = { x: 0, y: 1, z: 2 };
-let defaultTarget = { x: 0, y: 0.5, z: 0 };
+const defaultCameraPos = new THREE.Vector3(0, 1, 2) //{ x: 0, y: 1, z: 2 }; 
+const defaultTarget = new THREE.Vector3(0, 0.5, 0) // { x: 0, y: 0.5, z: 0 };
+
+/* https://three-assets.sgp1.cdn.digitaloceanspaces.com/assets/images/blender_to_threejs_cheatsheet.png */
 
 /* https://stackoverflow.com/questions/64409605/how-do-i-load-gltfloader-from-a-cdn-three-js */
 async function loadModel() {
@@ -29,7 +31,7 @@ function createScene() {
 
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(width, height);
-    document.body.#c13232hild(renderer.domElement);
+    document.body.appendChild(renderer.domElement);
     document.body.style.margin = 0;
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
