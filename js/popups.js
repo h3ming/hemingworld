@@ -6,6 +6,8 @@ let clickedObject = null; // for clicked object
 //const lookDummy = new THREE.PerspectiveCamera(); // used only to compute the end rotation
 //let camTimeline = null;
 
+let look = new THREE.Vector3()
+
 const dict = {
     'poster': 'poster-popup',
     'monitor': 'monitor-popup'
@@ -44,12 +46,10 @@ function onPointerClick(event) {
             switch (clickedObject.name) {
                 case 'poster':
                     const postercam = new THREE.Vector3(objectWorldPos.x+0.5, objectWorldPos.y + 0.1, objectWorldPos.z + 1);
-                    // const lookTarget = new THREE.Vector3(lookTarget.x+1, lookTarget.y+0.1, lookTarget.z - 1);
                     lookTarget.set(objectWorldPos.x + 0.55, objectWorldPos.y+0.1, objectWorldPos.z);
+                    look.set(lookTarget.x, lookTarget.y, lookTarget.z); // need this for smooth lookAt rotation 
                     console.log("looking at: ", lookTarget);
-                   // zoomIn(objectWorldPos.x+0.9, objectWorldPos.y, objectWorldPos.z + 1);
                     zoomIn(postercam, lookTarget);
-                    // console.log('poster camera at: ', camera.position);
                     break;
             }
             // zoomIn();
@@ -64,23 +64,24 @@ window.addEventListener('click', onPointerClick, false);
 
 
 // zooms in where x, y, z are the camera position, then angles correctly 
-// function zoomIn(cameraPos) {
 function zoomIn(cameraPos, lookatPos) {
+    // gsap.killTweensOf(camera.position);
+    // gsap.killTweensOf(look);
 
     gsap.to(camera.position, {
         x: cameraPos.x, y: cameraPos.y, z: cameraPos.z,
         duration: 2, 
-        ease: 'power2.inOut',
-        onComplete: () => {
-            camera.lookAt(lookatPos);
-        }
+      // ease: 'power2.inOut',
+        // onComplete: () => {
+        //     camera.lookAt(lookatPos);
+        // }
     });
-    // TODO: figure out lookAt animation
-    // gsap.to(look, {
-    //     x: lookTarget.x, y: lookTarget.y, z: lookTarget.z,
-    //     duration: 1,
-    //     ease: 'power2.inOut'
-    // });
+        gsap.to(look, {
+        x: lookatPos.x, y: lookatPos.y, z: lookatPos.z,
+        duration: 2,
+        ease: 'power2.inOut',
+        onUpdate: () => camera.lookAt(look)
+    });
     handlePopup(clickedObject.name);
 }
     
@@ -145,11 +146,17 @@ async function zoomOut() {
     gsap.to(camera.position, {
      x: defaultCameraPos.x, y: defaultCameraPos.y, z: defaultCameraPos.z,
       duration: 2,
-      ease: 'power2.inOut',
-      onComplete: () => {
-        camera.lookAt(defaultTarget.x, defaultTarget.y, defaultTarget.z);
-      }
-    })
+    //   ease: 'power2.inOut',
+    //   onComplete: () => {
+    //     camera.lookAt(defaultTarget.x, defaultTarget.y, defaultTarget.z);
+    //   }
+    });
+    gsap.to(look, {
+        x: defaultTarget.x, y: defaultTarget.y, z: defaultTarget.z,
+        duration: 2,
+        ease: 'power2.inOut',
+        onUpdate: () => camera.lookAt(look)
+    });
     // nn.get('.popup').css('display', 'none');
     // await nn.sleep(10);
     // nn.get('.popup').css('opacity', 0);
