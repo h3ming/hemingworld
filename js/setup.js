@@ -12,7 +12,7 @@ const defaultTarget = new THREE.Vector3(0, 0.5, 0) // { x: 0, y: 0.5, z: 0 };
 async function loadModel() {
     const loader = new THREE.GLTFLoader();
     try {
-        gltf = await loader.loadAsync('scene/sketch.gltf');
+        gltf = await loader.loadAsync('scene/roomsketch.gltf');
         gltf.scene.scale.set(0.5, 0.5, 0.5);
         gltf.scene.position.set(-0.3, -1, 0);
         gltf.scene.rotation.y = -(Math.PI / 2); 
@@ -30,13 +30,6 @@ function createScene() {
     camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     camera.position.set(defaultCameraPos.x, defaultCameraPos.y, defaultCameraPos.z);
     camera.lookAt(defaultTarget.x, defaultTarget.y, defaultTarget.z);
-
-    // const camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000);
-    // camera.position.set(defaultCameraPos.x, defaultCameraPos.y, defaultCameraPos.z);
-    // camera.lookAt(defaultTarget.x, defaultTarget.y, defaultTarget.z);
-    // console.log("camera pos:", camera.position);
-    // scene.add( camera );
-
 
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(width, height);
