@@ -2,9 +2,9 @@ let selectedObject = null; // for pointer hover
 let raycaster, pointer;
 let objectWorldPos = new THREE.Vector3();
 let clickedObject = null; // for clicked object
-let lookTarget = new THREE.Vector3(); // angle the camera looks at after zooming in 
-const lookDummy = new THREE.PerspectiveCamera(); // used only to compute the end rotation
-let camTimeline = null;
+//let lookTarget = new THREE.Vector3(); // angle the camera looks at after zooming in 
+//const lookDummy = new THREE.PerspectiveCamera(); // used only to compute the end rotation
+//let camTimeline = null;
 
 const dict = {
     'poster': 'poster-popup',
@@ -39,26 +39,32 @@ function onPointerClick(event) {
         if (selectedObject.name in dict) {
             clickedObject = selectedObject;
             clickedObject.getWorldPosition(objectWorldPos);
-            lookTarget = objectWorldPos;
-            console.log('first', lookTarget);
+            console.log("poster at: ", objectWorldPos);
+            let lookTarget = new THREE.Vector3(); //could've also used .copy
             switch (clickedObject.name) {
                 case 'poster':
-                    lookTarget.set(lookTarget.x+1, lookTarget.y+0.1, lookTarget.z - 1);
-                    console.log("second", lookTarget);
+                    const postercam = new THREE.Vector3(objectWorldPos.x+0.5, objectWorldPos.y + 0.1, objectWorldPos.z + 1);
+                    // const lookTarget = new THREE.Vector3(lookTarget.x+1, lookTarget.y+0.1, lookTarget.z - 1);
+                    lookTarget.set(objectWorldPos.x + 0.55, objectWorldPos.y+0.1, objectWorldPos.z);
+                    console.log("looking at: ", lookTarget);
                    // zoomIn(objectWorldPos.x+0.9, objectWorldPos.y, objectWorldPos.z + 1);
-                    let postercam = new THREE.Vector3(objectWorldPos.x-0.3, objectWorldPos.y, objectWorldPos.z + 1);
                     zoomIn(postercam, lookTarget);
-                    console.log('poster camera at: ', camera.position);
+                    // console.log('poster camera at: ', camera.position);
                     break;
             }
             // zoomIn();
             console.log('clicked object:', selectedObject.name);
         }
+        return;
     }
 }
 window.addEventListener('click', onPointerClick, false);
 
+// https://threejs.org/examples/webgl_math_orientation_transform
+
+
 // zooms in where x, y, z are the camera position, then angles correctly 
+// function zoomIn(cameraPos) {
 function zoomIn(cameraPos, lookatPos) {
 
     gsap.to(camera.position, {
@@ -66,7 +72,7 @@ function zoomIn(cameraPos, lookatPos) {
         duration: 2, 
         ease: 'power2.inOut',
         onComplete: () => {
-            camera.lookAt(lookTarget);
+            camera.lookAt(lookatPos);
         }
     });
     // TODO: figure out lookAt animation
@@ -75,7 +81,7 @@ function zoomIn(cameraPos, lookatPos) {
     //     duration: 1,
     //     ease: 'power2.inOut'
     // });
-    // handlePopup(clickedObject.name);
+    handlePopup(clickedObject.name);
 }
     
 
@@ -140,13 +146,23 @@ async function zoomOut() {
      x: defaultCameraPos.x, y: defaultCameraPos.y, z: defaultCameraPos.z,
       duration: 2,
       ease: 'power2.inOut',
-      onUpdate: () => {
+      onComplete: () => {
         camera.lookAt(defaultTarget.x, defaultTarget.y, defaultTarget.z);
       }
     })
-    nn.get('.popup').css('display', 'block')
-    await nn.sleep(10)
-    nn.get('.popup').css('opacity', 0)
+    // nn.get('.popup').css('display', 'none');
+    // await nn.sleep(10);
+    // nn.get('.popup').css('opacity', 0);
+
+    nn.getAll('.popup').forEach(async popup => {
+        popup.css('display', 'block');
+        await nn.sleep(10);
+        popup.css('opacity', 0);
+    })
+
+    nn.get('#backButton').css('display', 'none');
+    await nn.sleep(10);
+    nn.get('#backButton').css('opacity', 0);
     // alert('thie function ran');
   }
 
@@ -180,11 +196,14 @@ window.addEventListener('keydown', goBack, false);
 
 async function handlePopup(objectName) {
     if (objectName in dict) {
-        nn.get(dict[objectName]).css('display', 'block');
+        nn.get('#' + dict[objectName]).css('display', 'block');
         await nn.sleep(10);
-        nn.get(dict[objectName]).css('opacity', 1);
+        nn.get('#' + dict[objectName]).css('opacity', 1);
         console.log("popup handled: ", objectName);
     } else {
         console.log("popup not handled for ", objectName);
     }   
+    nn.get('#backButton').css('display', 'block');
+    await nn.sleep(10);
+    nn.get('#backButton').css('opacity', 1);
 }

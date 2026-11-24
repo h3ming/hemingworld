@@ -3,6 +3,8 @@ let width = window.innerWidth;
 let height = window.innerHeight;
 const defaultCameraPos = new THREE.Vector3(0, 1, 2) //{ x: 0, y: 1, z: 2 }; 
 const defaultTarget = new THREE.Vector3(0, 0.5, 0) // { x: 0, y: 0.5, z: 0 };
+// const frustumSize = 100;
+// const aspect = window.innerWidth / window.innerHeight;
 
 /* https://three-assets.sgp1.cdn.digitaloceanspaces.com/assets/images/blender_to_threejs_cheatsheet.png */
 
@@ -28,6 +30,13 @@ function createScene() {
     camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     camera.position.set(defaultCameraPos.x, defaultCameraPos.y, defaultCameraPos.z);
     camera.lookAt(defaultTarget.x, defaultTarget.y, defaultTarget.z);
+
+    // const camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000);
+    // camera.position.set(defaultCameraPos.x, defaultCameraPos.y, defaultCameraPos.z);
+    // camera.lookAt(defaultTarget.x, defaultTarget.y, defaultTarget.z);
+    // console.log("camera pos:", camera.position);
+    // scene.add( camera );
+
 
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(width, height);

@@ -31,6 +31,10 @@ body {
     border-width: 10px;
     border-color: #bd3030;
     background: blueviolet;
+
+    display: none;
+    opacity: 0;
+    transition: opacity 2s;
     /* display: none; */
     /* z-index: 10; */
     /* display: none; */
